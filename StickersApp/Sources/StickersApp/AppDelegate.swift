@@ -1,0 +1,183 @@
+import Cocoa
+import SwiftUI
+
+// Kaydedilecek veri yapısı
+struct StickerData: Codable {
+    let url: URL
+    let x: CGFloat
+    let y: CGFloat
+    let scale: CGFloat
+    let rotation: Double
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    var statusItem: NSStatusItem!
+    var windows: [StickerWindow] = []
+    
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
+        
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = statusItem.button {
+            button.image = NSImage(systemSymbolName: "face.smiling", accessibilityDescription: "Stickers")
+        }
+        
+        let menu = NSMenu()
+        menu.delegate = self
+        statusItem.menu = menu
+        
+        // Kayıtlı stickerları yükle
+        loadStickers()
+    }
+    
+    func menuWillOpen(_ menu: NSMenu) {
+        menu.removeAllItems()
+        menu.addItem(NSMenuItem(title: "Add New Sticker...", action: #selector(addSticker), keyEquivalent: "n"))
+        menu.addItem(NSMenuItem.separator())
+        
+        if windows.isEmpty {
+            let emptyItem = NSMenuItem(title: "No stickers yet", action: nil, keyEquivalent: "")
+            emptyItem.isEnabled = false
+            menu.addItem(emptyItem)
+        } else {
+            for (index, window) in windows.enumerated() {
+                let stickerMenu = NSMenuItem(title: "\(index + 1). \(window.state.imageName)", action: nil, keyEquivalent: "")
+                let subMenu = NSMenu()
+                
+                let growItem = NSMenuItem(title: "Grow", action: #selector(growSticker(_:)), keyEquivalent: "")
+                growItem.representedObject = window
+                subMenu.addItem(growItem)
+                
+                let shrinkItem = NSMenuItem(title: "Shrink", action: #selector(shrinkSticker(_:)), keyEquivalent: "")
+                shrinkItem.representedObject = window
+                subMenu.addItem(shrinkItem)
+                
+                let rotateItem = NSMenuItem(title: "Rotate", action: #selector(rotateSticker(_:)), keyEquivalent: "")
+                rotateItem.representedObject = window
+                subMenu.addItem(rotateItem)
+                
+                subMenu.addItem(NSMenuItem.separator())
+                let removeItem = NSMenuItem(title: "Remove", action: #selector(removeSticker(_:)), keyEquivalent: "")
+                removeItem.representedObject = window
+                subMenu.addItem(removeItem)
+                
+                stickerMenu.submenu = subMenu
+                menu.addItem(stickerMenu)
+            }
+        }
+        
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Clear All", action: #selector(clearAll), keyEquivalent: "c"))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+    }
+    
+    @objc func addSticker() {
+        let openPanel = NSOpenPanel()
+        openPanel.allowedContentTypes = [.png]
+        openPanel.allowsMultipleSelection = true
+        
+        openPanel.begin { response in
+            if response == .OK {
+                for url in openPanel.urls {
+                    self.createSticker(from: url)
+                }
+            }
+        }
+    }
+    
+    func createSticker(from url: URL, savedData: StickerData? = nil) {
+        guard let image = NSImage(contentsOf: url) else { return }
+        
+        let state = StickerState(image: image, url: url, name: url.lastPathComponent)
+        state.onChanged = { [weak self] in self?.saveStickers() }
+        
+        if let data = savedData {
+            state.scale = data.scale
+            state.rotation = data.rotation
+        }
+        
+        let size = NSSize(width: 350, height: 350)
+        let rect: NSRect
+        if let data = savedData {
+            rect = NSRect(x: data.x, y: data.y, width: size.width, height: size.height)
+        } else {
+            rect = NSRect(
+                x: NSEvent.mouseLocation.x - size.width / 2,
+                y: NSEvent.mouseLocation.y - size.height / 2,
+                width: size.width,
+                height: size.height
+            )
+        }
+        
+        let window = StickerWindow(state: state, contentRect: rect)
+        windows.append(window)
+        
+        // Yeni eklenince kaydet
+        saveStickers()
+    }
+    
+    func saveStickers() {
+        let data = windows.map { window in
+            StickerData(
+                url: window.state.imageURL,
+                x: window.frame.origin.x,
+                y: window.frame.origin.y,
+                scale: window.state.scale,
+                rotation: window.state.rotation
+            )
+        }
+        
+        if let encoded = try? JSONEncoder().encode(data) {
+            UserDefaults.standard.set(encoded, forKey: "SavedStickers")
+        }
+    }
+    
+    func loadStickers() {
+        guard let savedData = UserDefaults.standard.data(forKey: "SavedStickers"),
+              let decoded = try? JSONDecoder().decode([StickerData].self, from: savedData) else {
+            return
+        }
+        
+        for item in decoded {
+            createSticker(from: item.url, savedData: item)
+        }
+    }
+    
+    @objc func growSticker(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            window.state.scale += 0.1
+            saveStickers()
+        }
+    }
+    
+    @objc func shrinkSticker(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            window.state.scale -= 0.1
+            saveStickers()
+        }
+    }
+    
+    @objc func rotateSticker(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            window.state.rotation += 15
+            saveStickers()
+        }
+    }
+    
+    @objc func removeSticker(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            window.close()
+            windows.removeAll(where: { $0 == window })
+            saveStickers()
+        }
+    }
+    
+    @objc func clearAll() {
+        for window in windows {
+            window.close()
+        }
+        windows.removeAll()
+        saveStickers()
+    }
+}
