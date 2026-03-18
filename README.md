@@ -2,7 +2,7 @@
 
 Stickurr is a lightweight, native macOS application that allows you to place stickers (images) anywhere on your desktop. It's designed to be simple, interactive, and persistent.
 
-!(screenshot1.png)[screenshot1.png]
+![screenshot1.png](screenshot1.png)
 
 ## Features
 
