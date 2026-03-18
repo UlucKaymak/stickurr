@@ -1,57 +1,45 @@
-# StickersApp 🎨
+# Stickurr 🖼️
 
-macOS masaüstünüz için hafif (lightweight), yerli (native) ve şık bir PNG sticker uygulaması.
+Stickurr is a lightweight, native macOS application that allows you to place stickers (images) anywhere on your desktop. It's designed to be simple, interactive, and persistent.
 
-![Swift Version](https://img.shields.io/badge/Swift-6.0+-orange.svg)
-![Platform](https://img.shields.io/badge/Platform-macOS%2013.0+-blue.svg)
+## Features
 
-## Özellikler
+### 🚀 Core Functionality
+- **Add Stickers:** Add any image (PNG, JPG, etc.) from your local files to your desktop.
+- **Clipboard Support:** Quickly add stickers directly from your clipboard (Image or File URL).
+- **Persistence:** Your stickers stay exactly where you left them. All positions, scales, and rotations are saved and restored automatically when you restart the app.
+- **Menu Bar App:** Runs discreetly in your macOS menu bar for quick access.
 
-- 🕊️ **Hafif ve Hızlı:** Sadece SwiftUI ve AppKit kullanılarak geliştirildi. Electron veya web teknolojileri içermez, minimum kaynak tüketir.
-- ✨ **Otomatik Outline:** Eklediğiniz her PNG dosyasının etrafına otomatik olarak beyaz bir kenarlık ve hafif bir gölge eklenerek "sticker" görünümü verilir.
-- 🖱️ **Sürükle-Bırak:** Stickerları masaüstünüzde dilediğiniz yere sürükleyip bırakabilirsiniz.
-- ☁️ **Arka Planda Çalışma:** Uygulama Dock'ta yer kaplamaz, sadece Menü Çubuğu'nda (Status Bar) bir ikon olarak görünür.
-- 🖼️ **Şeffaf Katman:** Stickerlar şeffaf pencerelerde (NSPanel) çalışır, böylece masaüstüyle bütünleşik görünürler.
+### 🖱️ Interactive Gestures
+- **Move:** Long-press on a sticker to "pick it up" and drag it anywhere on your screen.
+- **Context Menu:** Right-click any sticker to access quick actions:
+  - **Grow/Shrink:** Resize your stickers (hold `Shift` for 5x faster scaling).
+  - **Rotate:** Spin your stickers clockwise or counter-clockwise.
+  - **Toggle Outline:** Show or hide a clean white border around your sticker.
+  - **Reset:** Instantly restore a sticker to its original size and rotation.
+  - **Remove:** Delete a single sticker from your desktop.
 
-## Kurulum ve Çalıştırma
+### 🛠️ Technical Highlights
+- **Native Swift:** Built entirely with Swift 5.9+.
+- **Hybrid Architecture:** Combines **AppKit** (`NSPanel`, `NSStatusItem`) for window management and **SwiftUI** for a modern, interactive user interface.
+- **Reactive State:** Uses **Combine** to sync state between windows and the menu bar.
+- **Persistence:** Efficiently saves data in JSON format within `UserDefaults`.
+- **Lightweight:** Minimal CPU and memory footprint.
 
-### Hazır Paketi Çalıştırma
-Eğer projeyi derlediyseniz, ana dizindeki uygulamayı şu komutla başlatabilirsiniz:
+## Requirements
+- macOS 13.0 or later (Ventura+)
+- Apple Silicon or Intel Mac
 
+## Development
+To build the project locally:
 ```bash
-open StickersApp.app
+cd Stickurr
+swift build
+```
+To run the application:
+```bash
+swift run Stickurr
 ```
 
-### Kaynaktan Derleme
-Uygulamayı kendiniz derlemek isterseniz Terminal üzerinden şu komutu kullanabilirsiniz:
-
-```bash
-# Proje dizinine gidin
-cd StickersApp
-
-# Derleme ve Paketleme
-swiftc -o StickersApp/StickersApp Sources/StickersApp/*.swift \
-    -sdk $(xcrun --show-sdk-path --sdk macosx) \
-    -framework SwiftUI -framework Cocoa -framework UniformTypeIdentifiers
-
-# .app paketini güncelleme
-cp StickersApp/StickersApp StickersApp.app/Contents/MacOS/StickersApp
-```
-
-## Kullanım Rehberi
-
-1. **Uygulamayı Başlatın:** Menü çubuğunda (sağ üst) gülen yüz ikonu belirecektir.
-2. **Sticker Ekleme:** İkona tıklayın ve `Yeni Sticker Ekle...` (veya `Cmd+N`) seçeneğini seçin.
-3. **Dosya Seçimi:** Bilgisayarınızdan bir veya birden fazla PNG dosyası seçin.
-4. **Yerleştirme:** Stickerlar ekranın ortasında belirecektir. İstediğiniz stickerı farenizle tutup sürükleyerek konumlandırabilirsiniz.
-5. **Temizleme:** Tüm stickerları kaldırmak için menüden `Hepsini Temizle` seçeneğini kullanın.
-6. **Çıkış:** Uygulamayı tamamen kapatmak için `Çıkış` seçeneğine tıklayın.
-
-## Teknik Detaylar
-
-- **NSPanel:** Sticker pencereleri `NSPanel` sınıfından türetilmiştir. Bu sayede `canJoinAllSpaces` özelliği ile tüm masaüstü alanlarında görünürler ve `floating` seviyesiyle diğer pencerelerin üstünde kalabilirler.
-- **SwiftUI Shadows:** Outline efekti, performans kaybı yaşatmamak için çoklu gölge (shadow) katmanları kullanılarak simüle edilmiştir.
-- **LSUIElement:** `Info.plist` içerisindeki bu anahtar sayesinde uygulama Dock'ta görünmez.
-
-## Lisans
-Bu proje eğitim amaçlı ve kişisel kullanım için tasarlanmıştır. İstediğiniz gibi geliştirebilir ve değiştirebilirsiniz.
+## License
+Created by Uluc Kaymak. All rights reserved.
