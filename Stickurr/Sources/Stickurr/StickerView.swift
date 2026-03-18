@@ -9,6 +9,7 @@ class StickerState: ObservableObject {
     @Published var scale: CGFloat = 1.0
     @Published var rotation: Double = 0.0
     @Published var isPasted: Bool = false
+    @Published var showOutline: Bool = true
     
     weak var window: NSWindow?
     var onChanged: (() -> Void)? // Kayıt için callback
@@ -52,14 +53,15 @@ struct StickerView: View {
                     perspective: 0.3
                 )
                 .opacity(state.isPasted ? 1.0 : 0.0)
-                .shadow(color: outlineColor, radius: 0, x: outlineSize, y: 0)
-                .shadow(color: outlineColor, radius: 0, x: -outlineSize, y: 0)
-                .shadow(color: outlineColor, radius: 0, x: 0, y: outlineSize)
-                .shadow(color: outlineColor, radius: 0, x: 0, y: -outlineSize)
-                .shadow(color: outlineColor, radius: 0, x: outlineSize, y: outlineSize)
-                .shadow(color: outlineColor, radius: 0, x: -outlineSize, y: -outlineSize)
-                .shadow(color: outlineColor, radius: 0, x: outlineSize, y: -outlineSize)
-                .shadow(color: outlineColor, radius: 0, x: -outlineSize, y: outlineSize)
+                // Outline shadows (Conditional based on state.showOutline)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: 0)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: 0)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 0, y: outlineSize)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 0, y: -outlineSize)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: outlineSize)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: -outlineSize)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: -outlineSize)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: outlineSize)
                 .shadow(color: Color.black.opacity(state.isPasted ? 0.4 : 0), radius: 8, x: 0, y: 4)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -106,6 +108,12 @@ struct StickerView: View {
                 }
         )
         .contextMenu {
+            Section("Appearance") {
+                Button(state.showOutline ? "Hide Outline" : "Show Outline") {
+                    state.showOutline.toggle()
+                    state.triggerChange()
+                }
+            }
             Section("Size") {
                 Button("Grow") { state.scale += 0.1; state.triggerChange() }
                 Button("Shrink") { state.scale -= 0.1; state.triggerChange() }
@@ -122,6 +130,7 @@ struct StickerView: View {
             Button("Reset") {
                 state.scale = 1.0
                 state.rotation = 0.0
+                state.showOutline = true
                 state.triggerChange()
             }
         }

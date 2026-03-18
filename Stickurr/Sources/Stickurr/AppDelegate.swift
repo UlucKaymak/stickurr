@@ -8,6 +8,7 @@ struct StickerData: Codable {
     let y: CGFloat
     let scale: CGFloat
     let rotation: Double
+    let showOutline: Bool?
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -51,15 +52,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             for (index, window) in windows.enumerated() {
                 let stickerMenu = NSMenuItem(title: "\(index + 1). \(window.state.imageName)", action: nil, keyEquivalent: "")
                 let subMenu = NSMenu()
-                
+
+                let toggleOutlineItem = NSMenuItem(title: window.state.showOutline ? "Hide Outline" : "Show Outline", action: #selector(toggleOutline(_:)), keyEquivalent: "")
+                toggleOutlineItem.representedObject = window
+                subMenu.addItem(toggleOutlineItem)
+
+                subMenu.addItem(NSMenuItem.separator())
+
                 let growItem = NSMenuItem(title: "Grow", action: #selector(growSticker(_:)), keyEquivalent: "")
                 growItem.representedObject = window
                 subMenu.addItem(growItem)
-                
+
                 let shrinkItem = NSMenuItem(title: "Shrink", action: #selector(shrinkSticker(_:)), keyEquivalent: "")
                 shrinkItem.representedObject = window
                 subMenu.addItem(shrinkItem)
-                
+
                 subMenu.addItem(NSMenuItem.separator())
 
                 let rotateCWItem = NSMenuItem(title: "Rotate Clockwise", action: #selector(rotateStickerCW(_:)), keyEquivalent: "")
@@ -69,24 +76,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 let rotateCCWItem = NSMenuItem(title: "Rotate Counter-Clockwise", action: #selector(rotateStickerCCW(_:)), keyEquivalent: "")
                 rotateCCWItem.representedObject = window
                 subMenu.addItem(rotateCCWItem)
-                
+
                 subMenu.addItem(NSMenuItem.separator())
+
                 let removeItem = NSMenuItem(title: "Remove", action: #selector(removeSticker(_:)), keyEquivalent: "")
                 removeItem.representedObject = window
                 subMenu.addItem(removeItem)
-                
+
                 stickerMenu.submenu = subMenu
                 menu.addItem(stickerMenu)
             }
-        }
-        
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Clear All", action: #selector(clearAll), keyEquivalent: "c"))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-    }
-    
-    @objc func addSticker() {
+            }
+
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(NSMenuItem(title: "Clear All", action: #selector(clearAll), keyEquivalent: "c"))
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+            }
+
+            @objc func toggleOutline(_ sender: NSMenuItem) {
+            if let window = sender.representedObject as? StickerWindow {
+            window.state.showOutline.toggle()
+            saveStickers()
+            }
+            }
+
+            @objc func addSticker() {
+
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [.png]
         openPanel.allowsMultipleSelection = true
@@ -134,6 +150,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let data = savedData {
             state.scale = data.scale
             state.rotation = data.rotation
+            state.showOutline = data.showOutline ?? true
         }
         
         let size = NSSize(width: 350, height: 350)
@@ -163,7 +180,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 x: window.frame.origin.x,
                 y: window.frame.origin.y,
                 scale: window.state.scale,
-                rotation: window.state.rotation
+                rotation: window.state.rotation,
+                showOutline: window.state.showOutline
             )
         }
         
