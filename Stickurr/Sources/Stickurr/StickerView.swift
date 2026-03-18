@@ -56,7 +56,6 @@ struct StickerView: View {
             Image(nsImage: state.image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: baseSize.width, height: baseSize.height)
                 .rotationEffect(.degrees(state.rotation))
                 .scaleEffect(state.scale)
                 .scaleEffect(isLongPressed ? 1.1 : 1.0)
@@ -66,6 +65,7 @@ struct StickerView: View {
                     anchor: .topLeading,
                     perspective: 0.5
                 )
+                .frame(width: baseSize.width, height: baseSize.height)
                 .opacity(state.isPasted ? 1.0 : 0.0)
                 // Outline shadows (Conditional based on state.showOutline)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: 0)

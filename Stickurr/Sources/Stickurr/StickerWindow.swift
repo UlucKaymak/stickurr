@@ -66,13 +66,13 @@ class StickerWindow: NSPanel {
         
         // Scale it up (including a buffer for the 1.1x pickup scale)
         let s = state.scale * 1.1
-        w *= s
-        h *= s
+        let scaledW = w * s
+        let scaledH = h * s
         
         // Rotation bounding box
         let rad = CGFloat(state.rotation * .pi / 180)
-        let rotatedW = abs(w * cos(rad)) + abs(h * sin(rad))
-        let rotatedH = abs(w * sin(rad)) + abs(h * cos(rad))
+        let rotatedW = abs(scaledW * cos(rad)) + abs(scaledH * sin(rad))
+        let rotatedH = abs(scaledW * sin(rad)) + abs(scaledH * cos(rad))
         
         let newSize = NSSize(
             width: ceil(rotatedW + padding * 2),
