@@ -93,9 +93,8 @@ class StickerWindow: NSPanel {
             self.level = .floating
             self.orderFront(nil)
         } else {
-            // Masaüstü modu
-            self.level = .normal
-            self.order(.below, relativeTo: 0)
+            // Masaüstü modu: Masaüstü simgelerinin hemen üstünde, diğer pencerelerin arkasında
+            self.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
         }
     }
     
