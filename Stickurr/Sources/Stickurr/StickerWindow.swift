@@ -1,8 +1,10 @@
 import Cocoa
 import SwiftUI
+import Combine
 
 class StickerWindow: NSPanel {
     let state: StickerState
+    private var cancellables = Set<AnyCancellable>()
     
     init(state: StickerState, contentRect: NSRect) {
         self.state = state
@@ -17,10 +19,6 @@ class StickerWindow: NSPanel {
         self.isOpaque = false
         self.hasShadow = false
         
-        // Önemli: Normal seviyeye alıyoruz ama arkada sabitliyoruz
-        self.level = .normal 
-        
-        // Masaüstünde sabit kalmasını ve pencerelerin altında durmasını sağlar
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         
         self.hidesOnDeactivate = false
@@ -34,8 +32,23 @@ class StickerWindow: NSPanel {
         
         self.makeKeyAndOrderFront(nil)
         
-        // Pencereleri arkaya gönder
-        self.order(.below, relativeTo: 0)
+        // inFront değişimini dinle ve pencere seviyesini güncelle
+        state.$inFront
+            .sink { [weak self] isInFront in
+                self?.updateWindowLevel(isInFront: isInFront)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateWindowLevel(isInFront: Bool) {
+        if isInFront {
+            self.level = .floating
+            self.orderFront(nil)
+        } else {
+            // Masaüstü modu
+            self.level = .normal
+            self.order(.below, relativeTo: 0)
+        }
     }
     
     override var canBecomeKey: Bool { return true }

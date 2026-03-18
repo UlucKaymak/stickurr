@@ -10,6 +10,7 @@ class StickerState: ObservableObject {
     @Published var rotation: Double = 0.0
     @Published var isPasted: Bool = false
     @Published var showOutline: Bool = true
+    @Published var inFront: Bool = false
     
     weak var window: NSWindow?
     var onChanged: (() -> Void)? // Kayıt için callback
@@ -111,6 +112,10 @@ struct StickerView: View {
             Section("Appearance") {
                 Button(state.showOutline ? "Hide Outline" : "Show Outline") {
                     state.showOutline.toggle()
+                    state.triggerChange()
+                }
+                Button(state.inFront ? "Send to Desktop" : "Bring to Front") {
+                    state.inFront.toggle()
                     state.triggerChange()
                 }
             }

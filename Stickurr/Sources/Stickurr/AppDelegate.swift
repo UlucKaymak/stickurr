@@ -9,6 +9,7 @@ struct StickerData: Codable {
     let scale: CGFloat
     let rotation: Double
     let showOutline: Bool?
+    let inFront: Bool?
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -57,8 +58,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 toggleOutlineItem.representedObject = window
                 subMenu.addItem(toggleOutlineItem)
 
-                subMenu.addItem(NSMenuItem.separator())
+                let toggleInFrontItem = NSMenuItem(title: window.state.inFront ? "Send to Desktop" : "Bring to Front", action: #selector(toggleInFront(_:)), keyEquivalent: "")
+                toggleInFrontItem.representedObject = window
+                subMenu.addItem(toggleInFrontItem)
 
+                subMenu.addItem(NSMenuItem.separator())
                 let growItem = NSMenuItem(title: "Grow", action: #selector(growSticker(_:)), keyEquivalent: "")
                 growItem.representedObject = window
                 subMenu.addItem(growItem)
@@ -95,14 +99,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
 
             @objc func toggleOutline(_ sender: NSMenuItem) {
-            if let window = sender.representedObject as? StickerWindow {
-            window.state.showOutline.toggle()
-            saveStickers()
+                if let window = sender.representedObject as? StickerWindow {
+                    window.state.showOutline.toggle()
+                    saveStickers()
+                }
             }
+
+            @objc func toggleInFront(_ sender: NSMenuItem) {
+                if let window = sender.representedObject as? StickerWindow {
+                    window.state.inFront.toggle()
+                    saveStickers()
+                }
             }
 
             @objc func addSticker() {
-
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [.png]
         openPanel.allowsMultipleSelection = true
@@ -151,6 +161,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             state.scale = data.scale
             state.rotation = data.rotation
             state.showOutline = data.showOutline ?? true
+            state.inFront = data.inFront ?? false
         }
         
         let size = NSSize(width: 350, height: 350)
@@ -181,7 +192,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 y: window.frame.origin.y,
                 scale: window.state.scale,
                 rotation: window.state.rotation,
-                showOutline: window.state.showOutline
+                showOutline: window.state.showOutline,
+                inFront: window.state.inFront
             )
         }
         
