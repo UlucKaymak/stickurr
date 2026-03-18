@@ -14,6 +14,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var statusItem: NSStatusItem!
     var windows: [StickerWindow] = []
     
+    lazy var stickersFolder: URL = {
+        let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+        let appSupport = paths[0].appendingPathComponent("Stickurr", isDirectory: true)
+        try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
+        return appSupport
+    }()
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         
@@ -33,6 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         menu.removeAllItems()
         menu.addItem(NSMenuItem(title: "Add New Sticker...", action: #selector(addSticker), keyEquivalent: "n"))
+        menu.addItem(NSMenuItem(title: "Add from Clipboard", action: #selector(addFromClipboard), keyEquivalent: "v"))
         menu.addItem(NSMenuItem.separator())
         
         if windows.isEmpty {
@@ -88,6 +96,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 for url in openPanel.urls {
                     self.createSticker(from: url)
                 }
+            }
+        }
+    }
+    
+    @objc func addFromClipboard() {
+        let pasteboard = NSPasteboard.general
+        
+        // 1. Kopyalanmış dosya varsa (Finder'dan)
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self]) as? [URL], !urls.isEmpty {
+            for url in urls {
+                createSticker(from: url)
+            }
+            return
+        }
+        
+        // 2. Doğrudan resim datası varsa (Ekran görüntüsü, tarayıcıdan kopyalama vb.)
+        if let image = NSImage(pasteboard: pasteboard) {
+            let fileName = "clipboard_\(Int(Date().timeIntervalSince1970)).png"
+            let fileURL = stickersFolder.appendingPathComponent(fileName)
+            
+            if let tiffData = image.tiffRepresentation,
+               let bitmapImage = NSBitmapImageRep(data: tiffData),
+               let pngData = bitmapImage.representation(using: .png, properties: [:]) {
+                try? pngData.write(to: fileURL)
+                createSticker(from: fileURL)
             }
         }
     }
