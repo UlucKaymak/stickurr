@@ -35,7 +35,7 @@ struct StickerView: View {
     
     let outlineSize: CGFloat = 4
     let outlineColor: Color = .white
-    let padding: CGFloat = 60
+    let padding: CGFloat = 30
     let baseDimension: CGFloat = 230
     
     private var baseSize: CGSize {

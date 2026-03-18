@@ -51,7 +51,7 @@ class StickerWindow: NSPanel {
     
     private func updateWindowSize() {
         let baseDimension: CGFloat = 230
-        let padding: CGFloat = 60
+        let padding: CGFloat = 30
         let imageSize = state.image.size
         let aspectRatio = imageSize.width / imageSize.height
         
