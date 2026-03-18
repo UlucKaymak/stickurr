@@ -91,43 +91,40 @@ struct StickerView: View {
             }
         }
         .gesture(
-            LongPressGesture(minimumDuration: 0.5)
-                .onEnded { _ in
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        isLongPressed = true
-                    }
-                    startMouseLocation = NSEvent.mouseLocation
-                    if let window = state.window {
-                        startWindowOrigin = window.frame.origin
-                    }
-                    NSSound.beep()
-                }
-                .sequenced(before: DragGesture(coordinateSpace: .global))
+            DragGesture(minimumDistance: 2, coordinateSpace: .global)
                 .onChanged { value in
-                    switch value {
-                    case .second(true, _):
-                        if isLongPressed, let window = state.window {
-                            let currentMouse = NSEvent.mouseLocation
-                            let deltaX = currentMouse.x - startMouseLocation.x
-                            let deltaY = currentMouse.y - startMouseLocation.y
-                            let newOrigin = NSPoint(
-                                x: startWindowOrigin.x + deltaX,
-                                y: startWindowOrigin.y + deltaY
-                            )
-                            window.setFrameOrigin(newOrigin)
+                    if !isLongPressed {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            isLongPressed = true
                         }
-                    default:
-                        break
+                        startMouseLocation = NSEvent.mouseLocation
+                        if let window = state.window {
+                            startWindowOrigin = window.frame.origin
+                        }
+                        NSSound.beep()
+                    }
+                    
+                    if let window = state.window {
+                        let currentMouse = NSEvent.mouseLocation
+                        let deltaX = currentMouse.x - startMouseLocation.x
+                        let deltaY = currentMouse.y - startMouseLocation.y
+                        let newOrigin = NSPoint(
+                            x: startWindowOrigin.x + deltaX,
+                            y: startWindowOrigin.y + deltaY
+                        )
+                        window.setFrameOrigin(newOrigin)
                     }
                 }
                 .onEnded { _ in
-                    isLongPressed = false
-                    // "Yapıştırma" efekti için animasyonu tekrar tetikle
-                    state.isPasted = false
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0)) {
-                        state.isPasted = true
+                    if isLongPressed {
+                        isLongPressed = false
+                        // "Yapıştırma" efekti için animasyonu tekrar tetikle
+                        state.isPasted = false
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0)) {
+                            state.isPasted = true
+                        }
+                        state.triggerChange() // Konum değişince kaydet
                     }
-                    state.triggerChange() // Konum değişince kaydet
                 }
         )
         .contextMenu {
