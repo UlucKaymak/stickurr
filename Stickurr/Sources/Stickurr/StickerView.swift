@@ -46,12 +46,12 @@ struct StickerView: View {
                 .aspectRatio(contentMode: .fit)
                 .rotationEffect(.degrees(state.rotation))
                 .scaleEffect(state.scale)
-                .scaleEffect(isLongPressed ? 1.05 : 1.0)
+                .scaleEffect(isLongPressed ? 1.1 : 1.0)
                 .rotation3DEffect(
-                    .degrees(state.isPasted ? 0 : -90),
-                    axis: (x: 1, y: -1, z: 0),
+                    .degrees(state.isPasted ? 0 : -45),
+                    axis: (x: 1, y: -0.5, z: 0),
                     anchor: .topLeading,
-                    perspective: 0.3
+                    perspective: 0.5
                 )
                 .opacity(state.isPasted ? 1.0 : 0.0)
                 // Outline shadows (Conditional based on state.showOutline)
@@ -63,7 +63,13 @@ struct StickerView: View {
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: -outlineSize)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: -outlineSize)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: outlineSize)
-                .shadow(color: Color.black.opacity(state.isPasted ? 0.4 : 0), radius: 8, x: 0, y: 4)
+                // Shadow
+                .shadow(
+                    color: Color.black.opacity(state.isPasted ? 0.4 : 0.2),
+                    radius: state.isPasted ? 8 : 20,
+                    x: state.isPasted ? 0 : 15,
+                    y: state.isPasted ? 4 : 25
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.blue.opacity(isLongPressed ? 0.5 : 0), lineWidth: 2)
@@ -71,14 +77,16 @@ struct StickerView: View {
         }
         .padding(60)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75, blendDuration: 0)) {
                 state.isPasted = true
             }
         }
         .gesture(
             LongPressGesture(minimumDuration: 0.5)
                 .onEnded { _ in
-                    isLongPressed = true
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isLongPressed = true
+                    }
                     startMouseLocation = NSEvent.mouseLocation
                     if let window = state.window {
                         startWindowOrigin = window.frame.origin
@@ -105,6 +113,11 @@ struct StickerView: View {
                 }
                 .onEnded { _ in
                     isLongPressed = false
+                    // "Yapıştırma" efekti için animasyonu tekrar tetikle
+                    state.isPasted = false
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0)) {
+                        state.isPasted = true
+                    }
                     state.triggerChange() // Konum değişince kaydet
                 }
         )
