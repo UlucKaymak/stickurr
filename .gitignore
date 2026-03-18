@@ -31,3 +31,4 @@ Packages/
 # App binary (if any)
 StickersApp/StickersApp
 .DS_Store
+.vscode/\nStickurr.app/
