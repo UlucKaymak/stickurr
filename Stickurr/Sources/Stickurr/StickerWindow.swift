@@ -38,6 +38,54 @@ class StickerWindow: NSPanel {
                 self?.updateWindowLevel(isInFront: isInFront)
             }
             .store(in: &cancellables)
+            
+        // Scale ve Rotation değişimini dinle ve pencere boyutunu güncelle
+        Publishers.CombineLatest(state.$scale, state.$rotation)
+            .sink { [weak self] _, _ in
+                self?.updateWindowSize()
+            }
+            .store(in: &cancellables)
+            
+        updateWindowSize()
+    }
+    
+    private func updateWindowSize() {
+        let baseDimension: CGFloat = 230
+        let padding: CGFloat = 60
+        let imageSize = state.image.size
+        let aspectRatio = imageSize.width / imageSize.height
+        
+        var w, h: CGFloat
+        if aspectRatio > 1 {
+            w = baseDimension
+            h = baseDimension / aspectRatio
+        } else {
+            h = baseDimension
+            w = baseDimension * aspectRatio
+        }
+        
+        // Scale it up (including a buffer for the 1.1x pickup scale)
+        let s = state.scale * 1.1
+        w *= s
+        h *= s
+        
+        // Rotation bounding box
+        let rad = CGFloat(state.rotation * .pi / 180)
+        let rotatedW = abs(w * cos(rad)) + abs(h * sin(rad))
+        let rotatedH = abs(w * sin(rad)) + abs(h * cos(rad))
+        
+        let newSize = NSSize(
+            width: ceil(rotatedW + padding * 2),
+            height: ceil(rotatedH + padding * 2)
+        )
+        
+        let oldFrame = self.frame
+        let newOrigin = NSPoint(
+            x: oldFrame.midX - newSize.width / 2,
+            y: oldFrame.midY - newSize.height / 2
+        )
+        
+        self.setFrame(NSRect(origin: newOrigin, size: newSize), display: true, animate: false)
     }
     
     private func updateWindowLevel(isInFront: Bool) {

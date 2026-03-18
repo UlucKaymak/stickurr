@@ -35,6 +35,18 @@ struct StickerView: View {
     
     let outlineSize: CGFloat = 4
     let outlineColor: Color = .white
+    let padding: CGFloat = 60
+    let baseDimension: CGFloat = 230
+    
+    private var baseSize: CGSize {
+        let imageSize = state.image.size
+        let aspectRatio = imageSize.width / imageSize.height
+        if aspectRatio > 1 {
+            return CGSize(width: baseDimension, height: baseDimension / aspectRatio)
+        } else {
+            return CGSize(width: baseDimension * aspectRatio, height: baseDimension)
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -44,6 +56,7 @@ struct StickerView: View {
             Image(nsImage: state.image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
+                .frame(width: baseSize.width, height: baseSize.height)
                 .rotationEffect(.degrees(state.rotation))
                 .scaleEffect(state.scale)
                 .scaleEffect(isLongPressed ? 1.1 : 1.0)
@@ -70,12 +83,8 @@ struct StickerView: View {
                     x: state.isPasted ? 0 : 15,
                     y: state.isPasted ? 4 : 25
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue.opacity(isLongPressed ? 0.5 : 0), lineWidth: 2)
-                )
         }
-        .padding(60)
+        .padding(padding)
         .onAppear {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75, blendDuration: 0)) {
                 state.isPasted = true

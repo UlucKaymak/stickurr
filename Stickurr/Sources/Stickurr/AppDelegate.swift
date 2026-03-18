@@ -10,6 +10,7 @@ struct StickerData: Codable {
     let rotation: Double
     let showOutline: Bool?
     let inFront: Bool?
+    let isCenterSaved: Bool? // Flag to distinguish new vs old data
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -164,18 +165,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             state.inFront = data.inFront ?? false
         }
         
-        let size = NSSize(width: 350, height: 350)
-        let rect: NSRect
+        // Center calculation with backward compatibility
+        let center: NSPoint
         if let data = savedData {
-            rect = NSRect(x: data.x, y: data.y, width: size.width, height: size.height)
+            if data.isCenterSaved == true {
+                center = NSPoint(x: data.x, y: data.y)
+            } else {
+                // Old data used 350x350 fixed size origin
+                center = NSPoint(x: data.x + 175, y: data.y + 175)
+            }
         } else {
-            rect = NSRect(
-                x: NSEvent.mouseLocation.x - size.width / 2,
-                y: NSEvent.mouseLocation.y - size.height / 2,
-                width: size.width,
-                height: size.height
-            )
+            center = NSEvent.mouseLocation
         }
+        
+        // StickerWindow will calculate its own size, we just provide a placeholder rect with the correct center
+        let rect = NSRect(x: center.x - 1, y: center.y - 1, width: 2, height: 2)
         
         let window = StickerWindow(state: state, contentRect: rect)
         windows.append(window)
@@ -188,12 +192,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let data = windows.map { window in
             StickerData(
                 url: window.state.imageURL,
-                x: window.frame.origin.x,
-                y: window.frame.origin.y,
+                x: window.frame.midX, // Save center
+                y: window.frame.midY, // Save center
                 scale: window.state.scale,
                 rotation: window.state.rotation,
                 showOutline: window.state.showOutline,
-                inFront: window.state.inFront
+                inFront: window.state.inFront,
+                isCenterSaved: true
             )
         }
         
