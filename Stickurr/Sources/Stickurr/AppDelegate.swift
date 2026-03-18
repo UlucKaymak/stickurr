@@ -101,14 +101,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
             @objc func toggleOutline(_ sender: NSMenuItem) {
                 if let window = sender.representedObject as? StickerWindow {
-                    window.state.showOutline.toggle()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        window.state.showOutline.toggle()
+                    }
                     saveStickers()
                 }
             }
 
             @objc func toggleInFront(_ sender: NSMenuItem) {
                 if let window = sender.representedObject as? StickerWindow {
-                    window.state.inFront.toggle()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        window.state.inFront.toggle()
+                    }
                     saveStickers()
                 }
             }
@@ -220,28 +224,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     @objc func growSticker(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
-            window.state.scale += 0.1
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                window.state.scale += 0.1
+            }
             saveStickers()
         }
     }
     
     @objc func shrinkSticker(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
-            window.state.scale -= 0.1
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                window.state.scale -= 0.1
+            }
             saveStickers()
         }
     }
     
     @objc func rotateStickerCW(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
-            window.state.rotation += 15
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                window.state.rotation += 15
+            }
             saveStickers()
         }
     }
 
     @objc func rotateStickerCCW(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
-            window.state.rotation -= 15
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                window.state.rotation -= 15
+            }
             saveStickers()
         }
     }

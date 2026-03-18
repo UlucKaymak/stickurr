@@ -130,21 +130,45 @@ struct StickerView: View {
         .contextMenu {
             Section("Appearance") {
                 Button(state.showOutline ? "Hide Outline" : "Show Outline") {
-                    state.showOutline.toggle()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.showOutline.toggle()
+                    }
                     state.triggerChange()
                 }
                 Button(state.inFront ? "Send to Desktop" : "Bring to Front") {
-                    state.inFront.toggle()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.inFront.toggle()
+                    }
                     state.triggerChange()
                 }
             }
             Section("Size") {
-                Button("Grow") { state.scale += 0.1; state.triggerChange() }
-                Button("Shrink") { state.scale -= 0.1; state.triggerChange() }
+                Button("Grow") {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.scale += 0.1
+                    }
+                    state.triggerChange()
+                }
+                Button("Shrink") {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.scale -= 0.1
+                    }
+                    state.triggerChange()
+                }
             }
             Section("Rotate") {
-                Button("Rotate Clockwise") { state.rotation += 15; state.triggerChange() }
-                Button("Rotate Counter-Clockwise") { state.rotation -= 15; state.triggerChange() }
+                Button("Rotate Clockwise") {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.rotation += 15
+                    }
+                    state.triggerChange()
+                }
+                Button("Rotate Counter-Clockwise") {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.rotation -= 15
+                    }
+                    state.triggerChange()
+                }
             }
             Divider()
             Button("Remove") {
@@ -152,9 +176,11 @@ struct StickerView: View {
                 // Notification veya callback ile listeden silinecek
             }
             Button("Reset") {
-                state.scale = 1.0
-                state.rotation = 0.0
-                state.showOutline = true
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.scale = 1.0
+                    state.rotation = 0.0
+                    state.showOutline = true
+                }
                 state.triggerChange()
             }
         }
