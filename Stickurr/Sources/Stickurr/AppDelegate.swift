@@ -52,9 +52,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 shrinkItem.representedObject = window
                 subMenu.addItem(shrinkItem)
                 
-                let rotateItem = NSMenuItem(title: "Rotate", action: #selector(rotateSticker(_:)), keyEquivalent: "")
-                rotateItem.representedObject = window
-                subMenu.addItem(rotateItem)
+                subMenu.addItem(NSMenuItem.separator())
+
+                let rotateCWItem = NSMenuItem(title: "Rotate Clockwise", action: #selector(rotateStickerCW(_:)), keyEquivalent: "")
+                rotateCWItem.representedObject = window
+                subMenu.addItem(rotateCWItem)
+
+                let rotateCCWItem = NSMenuItem(title: "Rotate Counter-Clockwise", action: #selector(rotateStickerCCW(_:)), keyEquivalent: "")
+                rotateCCWItem.representedObject = window
+                subMenu.addItem(rotateCCWItem)
                 
                 subMenu.addItem(NSMenuItem.separator())
                 let removeItem = NSMenuItem(title: "Remove", action: #selector(removeSticker(_:)), keyEquivalent: "")
@@ -158,9 +164,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
     
-    @objc func rotateSticker(_ sender: NSMenuItem) {
+    @objc func rotateStickerCW(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
             window.state.rotation += 15
+            saveStickers()
+        }
+    }
+
+    @objc func rotateStickerCCW(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            window.state.rotation -= 15
             saveStickers()
         }
     }
