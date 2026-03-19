@@ -4,6 +4,8 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 
 ![screenshot1.png](Screenshots/screenshot1.png)
 
+> Check other screenshots too.
+
 ## Features
 
 ### Core functions
@@ -26,6 +28,8 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 ### Known baddies:
 - External displays cause cluttered stickers when you unplug them.
 - Sometimes rotation or scaling work after you hold the sticker. (idk why)
+
+![screenshot3.png](Screenshots/screenshot3.png)
 
 ## Technical stuff
 - Made with Swift and AppKit. 
