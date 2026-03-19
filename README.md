@@ -1,6 +1,6 @@
 # Stickurr
 
-Stickurr is a lightweight, native macOS application that allows you to place stickers (images) anywhere on your desktop. It's designed to be simple, cute.
+Stickurr is a lightweight, native macOS application that allows you to place stickers (images) anywhere on your desktop. It's designed to be simple and cute.
 
 ![screenshot1.png](Screenshots/screenshot1.png)
 
@@ -14,7 +14,7 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 - It consumes almost no system resources.
 - Stickers can be on top of other windows.
 - It remembers where you put the stickers. 
-- And only works on menu bar for quick access.
+- And only works on the menu bar for quick access.
 
 ### Stickerss
 - **Move:** Long-press on a sticker to "pick it up" and drag it anywhere on your screen.
@@ -33,12 +33,11 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 
 ## Technical stuff
 - Made with Swift and AppKit. 
-- Very lightweight. (Like 0.01 CPU usage)
-- Only data that stored:
-'''
-'/Users/username/Library/Application Support/Stickurr' for Sticker PNGs
-'/Users/uluckaymak/Library/Preferences/Stickurr.plist' for Sticker Attributes
-'''
+- Very lightweight. (Like 0.01% of CPU usage)
+- Only data that is stored:
+  * '/Users/username/Library/Application Support/Stickurr' for Sticker PNGs
+  * '/Users/uluckaymak/Library/Preferences/Stickurr.plist' for Sticker Attributes
+
 --- 
 
 ## License
