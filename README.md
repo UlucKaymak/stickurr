@@ -26,7 +26,6 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
   - **Remove:** Delete a single sticker from your desktop.
 
 ### Known baddies
-- External displays cause cluttered stickers when you unplug them.
 - Sometimes rotation or scaling work after you hold the sticker. (idk why)
 
 ![screenshot3.png](Screenshots/screenshot3.png)
