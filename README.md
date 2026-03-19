@@ -27,6 +27,7 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 
 ### Known baddies
 - Sometimes rotation or scaling work after you hold the sticker. (idk why)
+- Me. [Btw, you can buy me a coffee.](http://buymeacoffee.com/uluckaymak)
 
 ![screenshot3.png](Screenshots/screenshot3.png)
 
@@ -37,7 +38,8 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
   * '/Users/username/Library/Application Support/Stickurr' for Sticker PNGs
   * '/Users/uluckaymak/Library/Preferences/Stickurr.plist' for Sticker Attributes
 
---- 
+
+
 
 ## License
 Created by Uluç Kaymak. All rights reserved.
