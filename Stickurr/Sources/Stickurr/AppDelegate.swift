@@ -62,6 +62,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if !screenExists {
                     window.orderOut(nil)
                 } else {
+                    // Önce konumu bizim verimize göre zorla güncelle (macOS'in taşımasını ezmek için)
+                    window.updateWindowSize()
+                    
                     window.makeKeyAndOrderFront(nil)
                     // Pencere seviyesini tekrar güncelle
                     window.updateWindowLevel(isInFront: window.state.inFront)
