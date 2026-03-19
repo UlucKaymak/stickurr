@@ -11,6 +11,9 @@ class StickerState: ObservableObject {
     @Published var isPasted: Bool = false
     @Published var showOutline: Bool = true
     @Published var inFront: Bool = false
+    @Published var lastSavedScreenID: CGDirectDisplayID?
+    @Published var x: CGFloat = 0
+    @Published var y: CGFloat = 0
     
     weak var window: NSWindow?
     var onChanged: (() -> Void)? // Kayıt için callback
@@ -98,22 +101,16 @@ struct StickerView: View {
                             isLongPressed = true
                         }
                         startMouseLocation = NSEvent.mouseLocation
-                        if let window = state.window {
-                            startWindowOrigin = window.frame.origin
-                        }
+                        startWindowOrigin = NSPoint(x: state.x, y: state.y)
                         NSSound.beep()
                     }
                     
-                    if let window = state.window {
-                        let currentMouse = NSEvent.mouseLocation
-                        let deltaX = currentMouse.x - startMouseLocation.x
-                        let deltaY = currentMouse.y - startMouseLocation.y
-                        let newOrigin = NSPoint(
-                            x: startWindowOrigin.x + deltaX,
-                            y: startWindowOrigin.y + deltaY
-                        )
-                        window.setFrameOrigin(newOrigin)
-                    }
+                    let currentMouse = NSEvent.mouseLocation
+                    let deltaX = currentMouse.x - startMouseLocation.x
+                    let deltaY = currentMouse.y - startMouseLocation.y
+                    
+                    state.x = startWindowOrigin.x + deltaX
+                    state.y = startWindowOrigin.y + deltaY
                 }
                 .onEnded { _ in
                     if isLongPressed {
@@ -180,18 +177,8 @@ struct StickerView: View {
             }
             Divider()
             Button("Rename") {
-                let alert = NSAlert()
-                alert.messageText = "Rename Sticker"
-                alert.addButton(withTitle: "OK")
-                alert.addButton(withTitle: "Cancel")
-                
-                let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-                input.stringValue = state.imageName
-                alert.accessoryView = input
-                
-                if alert.runModal() == .alertFirstButtonReturn {
-                    state.imageName = input.stringValue
-                    state.triggerChange()
+                if let appDelegate = NSApp.delegate as? AppDelegate {
+                    appDelegate.showRenameAlert(for: state)
                 }
             }
             Button("Remove") {

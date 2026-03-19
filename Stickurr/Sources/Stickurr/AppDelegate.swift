@@ -12,6 +12,13 @@ struct StickerData: Codable {
     let showOutline: Bool?
     let inFront: Bool?
     let isCenterSaved: Bool? // Flag to distinguish new vs old data
+    let screenID: CGDirectDisplayID?
+}
+
+extension NSScreen {
+    var displayID: CGDirectDisplayID? {
+        return deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -39,12 +46,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         // Kayıtlı stickerları yükle
         loadStickers()
+        
+        // Ekran değişikliklerini dinle
+        NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+    
+    @objc func screensChanged() {
+        checkWindowVisibility()
+    }
+    
+    func checkWindowVisibility() {
+        for window in windows {
+            if let savedScreenID = window.state.lastSavedScreenID {
+                let screenExists = NSScreen.screens.contains { $0.displayID == savedScreenID }
+                if !screenExists {
+                    window.orderOut(nil)
+                } else {
+                    window.makeKeyAndOrderFront(nil)
+                    // Pencere seviyesini tekrar güncelle
+                    window.updateWindowLevel(isInFront: window.state.inFront)
+                }
+            }
+        }
     }
     
     func menuWillOpen(_ menu: NSMenu) {
         menu.removeAllItems()
         menu.addItem(NSMenuItem(title: "Add New Sticker...", action: #selector(addSticker), keyEquivalent: "n"))
         menu.addItem(NSMenuItem(title: "Add from Clipboard", action: #selector(addFromClipboard), keyEquivalent: "v"))
+        menu.addItem(NSMenuItem(title: "Reload Stickers", action: #selector(reloadStickers), keyEquivalent: "r"))
         menu.addItem(NSMenuItem.separator())
         
         if windows.isEmpty {
@@ -98,51 +128,67 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 stickerMenu.submenu = subMenu
                 menu.addItem(stickerMenu)
             }
-            }
+        }
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.7.3"
 
-            menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "Clear All", action: #selector(clearAll), keyEquivalent: "c"))
-            menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-            }
+        let versionItem = NSMenuItem(title: "Stickurr v\(version)", action: nil, keyEquivalent: "")
+        versionItem.isEnabled = false
+        menu.addItem(versionItem)
+        
+        menu.addItem(NSMenuItem(title: "Quit Stickurr", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+    }
 
-            @objc func toggleOutline(_ sender: NSMenuItem) {
-                if let window = sender.representedObject as? StickerWindow {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        window.state.showOutline.toggle()
-                    }
-                    saveStickers()
-                }
-            }
+    @objc func renameSticker(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            showRenameAlert(for: window.state)
+        }
+    }
 
-            @objc func toggleInFront(_ sender: NSMenuItem) {
-                if let window = sender.representedObject as? StickerWindow {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        window.state.inFront.toggle()
-                    }
-                    saveStickers()
-                }
-            }
+    func showRenameAlert(for state: StickerState) {
+        let alert = NSAlert()
+        alert.messageText = "Rename Sticker"
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Cancel")
+        
+        // Sol taraftaki ikonu sticker yapalım (Thumbnail olarak kalacak)
+        alert.icon = state.image
+        
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+        input.stringValue = state.imageName
+        input.placeholderString = "Sticker Name"
+        
+        alert.accessoryView = input
+        alert.window.initialFirstResponder = input
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            state.imageName = input.stringValue
+            saveStickers()
+            state.triggerChange()
+        }
+    }
 
-            @objc func renameSticker(_ sender: NSMenuItem) {
-                if let window = sender.representedObject as? StickerWindow {
-                    let alert = NSAlert()
-                    alert.messageText = "Rename Sticker"
-                    alert.addButton(withTitle: "OK")
-                    alert.addButton(withTitle: "Cancel")
-                    
-                    let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-                    input.stringValue = window.state.imageName
-                    alert.accessoryView = input
-                    
-                    if alert.runModal() == .alertFirstButtonReturn {
-                        window.state.imageName = input.stringValue
-                        saveStickers()
-                    }
-                }
+    @objc func toggleOutline(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                window.state.showOutline.toggle()
             }
+            saveStickers()
+        }
+    }
 
-            @objc func addSticker() {
+    @objc func toggleInFront(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                window.state.inFront.toggle()
+            }
+            saveStickers()
+        }
+    }
+
+    @objc func addSticker() {
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [.png]
         openPanel.allowsMultipleSelection = true
@@ -159,7 +205,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func addFromClipboard() {
         let pasteboard = NSPasteboard.general
         
-        // 1. Kopyalanmış dosya varsa (Finder'dan)
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self]) as? [URL], !urls.isEmpty {
             for url in urls {
                 createSticker(from: url)
@@ -167,7 +212,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         
-        // 2. Doğrudan resim datası varsa (Ekran görüntüsü, tarayıcıdan kopyalama vb.)
         if let image = NSImage(pasteboard: pasteboard) {
             let fileName = "clipboard_\(Int(Date().timeIntervalSince1970)).png"
             let fileURL = stickersFolder.appendingPathComponent(fileName)
@@ -193,28 +237,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             state.rotation = data.rotation
             state.showOutline = data.showOutline ?? true
             state.inFront = data.inFront ?? false
-        }
-        
-        // Center calculation with backward compatibility
-        let center: NSPoint
-        if let data = savedData {
-            if data.isCenterSaved == true {
-                center = NSPoint(x: data.x, y: data.y)
-            } else {
-                // Old data used 350x350 fixed size origin
-                center = NSPoint(x: data.x + 175, y: data.y + 175)
+            state.lastSavedScreenID = data.screenID
+            state.x = data.x
+            state.y = data.y
+            
+            // Eski data uyumluluğu: Eğer x/y merkez değilse (isCenterSaved yoksa)
+            if data.isCenterSaved != true {
+                state.x += 175
+                state.y += 175
             }
         } else {
-            center = NSEvent.mouseLocation
+            let mouse = NSEvent.mouseLocation
+            state.x = mouse.x
+            state.y = mouse.y
         }
         
-        // StickerWindow will calculate its own size, we just provide a placeholder rect with the correct center
-        let rect = NSRect(x: center.x - 1, y: center.y - 1, width: 2, height: 2)
+        // StickerWindow will calculate its own size based on state.x/y
+        let rect = NSRect(x: state.x - 1, y: state.y - 1, width: 2, height: 2)
         
         let window = StickerWindow(state: state, contentRect: rect)
         windows.append(window)
         
-        // Yeni eklenince kaydet
+        // Eğer ekran şu an yoksa sakla
+        if let screenID = state.lastSavedScreenID {
+            let screenExists = NSScreen.screens.contains { $0.displayID == screenID }
+            if !screenExists {
+                window.orderOut(nil)
+            }
+        }
+        
         saveStickers()
     }
     
@@ -223,14 +274,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             StickerData(
                 url: window.state.imageURL,
                 name: window.state.imageName,
-                x: window.frame.midX, // Save center
-                y: window.frame.midY, // Save center
+                x: window.state.x,
+                y: window.state.y,
                 scale: window.state.scale,
                 rotation: window.state.rotation,
                 showOutline: window.state.showOutline,
                 inFront: window.state.inFront,
-                isCenterSaved: true
+                isCenterSaved: true,
+                screenID: window.screen?.displayID ?? window.state.lastSavedScreenID
             )
+        }
+        
+        // Update state with last saved screen ID
+        for window in windows {
+            if let screenID = window.screen?.displayID {
+                window.state.lastSavedScreenID = screenID
+            }
         }
         
         if let encoded = try? JSONEncoder().encode(data) {
@@ -281,7 +340,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             saveStickers()
         }
     }
-
+    
     @objc func rotateStickerCCW(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
             let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
@@ -293,19 +352,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
     
-    @objc func removeSticker(_ sender: NSMenuItem) {
-        if let window = sender.representedObject as? StickerWindow {
-            window.close()
-            windows.removeAll(where: { $0 == window })
-            saveStickers()
-        }
-    }
-    
-    @objc func clearAll() {
+    @objc func reloadStickers() {
+        // Mevcut pencereleri kapat
         for window in windows {
             window.close()
         }
         windows.removeAll()
-        saveStickers()
+        
+        // Verileri ve görselleri yeniden yükle
+        loadStickers()
+    }
+    
+    @objc func removeSticker(_ sender: NSMenuItem) {
+        if let window = sender.representedObject as? StickerWindow {
+            window.close()
+            windows.removeAll { $0 === window }
+            saveStickers()
+        }
     }
 }

@@ -34,3 +34,7 @@ StickersApp/StickersApp
 .vscode/\nStickurr.app/
 Stickurr.app
 .vscode
+build.sh
+Stickurr.app
+AppIcon.icns
+AppIcon.iconset

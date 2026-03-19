@@ -40,8 +40,8 @@ class StickerWindow: NSPanel {
             .store(in: &cancellables)
             
         // Scale ve Rotation değişimini dinle ve pencere boyutunu güncelle
-        Publishers.CombineLatest(state.$scale, state.$rotation)
-            .sink { [weak self] _, _ in
+        Publishers.CombineLatest3(state.$scale, state.$rotation, Publishers.CombineLatest(state.$x, state.$y))
+            .sink { [weak self] _, _, _ in
                 self?.updateWindowSize()
             }
             .store(in: &cancellables)
@@ -49,7 +49,7 @@ class StickerWindow: NSPanel {
         updateWindowSize()
     }
     
-    private func updateWindowSize() {
+    func updateWindowSize() {
         let baseDimension: CGFloat = 230
         let padding: CGFloat = 30
         let imageSize = state.image.size
@@ -79,16 +79,16 @@ class StickerWindow: NSPanel {
             height: ceil(rotatedH + padding * 2)
         )
         
-        let oldFrame = self.frame
+        // Source of truth is state.x and state.y
         let newOrigin = NSPoint(
-            x: oldFrame.midX - newSize.width / 2,
-            y: oldFrame.midY - newSize.height / 2
+            x: state.x - newSize.width / 2,
+            y: state.y - newSize.height / 2
         )
         
         self.setFrame(NSRect(origin: newOrigin, size: newSize), display: true, animate: false)
     }
     
-    private func updateWindowLevel(isInFront: Bool) {
+    func updateWindowLevel(isInFront: Bool) {
         if isInFront {
             self.level = .floating
             self.orderFront(nil)
