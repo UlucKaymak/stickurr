@@ -144,28 +144,36 @@ struct StickerView: View {
             }
             Section("Size") {
                 Button("Grow") {
+                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                    let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.scale += 0.1
+                        state.scale += amount
                     }
                     state.triggerChange()
                 }
                 Button("Shrink") {
+                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                    let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.scale -= 0.1
+                        state.scale -= amount
                     }
                     state.triggerChange()
                 }
             }
             Section("Rotate") {
                 Button("Rotate Clockwise") {
+                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                    let amount: Double = isShiftPressed ? 30 : 15
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.rotation += 15
+                        state.rotation += amount
                     }
                     state.triggerChange()
                 }
                 Button("Rotate Counter-Clockwise") {
+                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                    let amount: Double = isShiftPressed ? 30 : 15
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.rotation -= 15
+                        state.rotation -= amount
                     }
                     state.triggerChange()
                 }
