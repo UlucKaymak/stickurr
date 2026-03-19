@@ -4,6 +4,7 @@ import SwiftUI
 // Kaydedilecek veri yapısı
 struct StickerData: Codable {
     let url: URL
+    let name: String?
     let x: CGFloat
     let y: CGFloat
     let scale: CGFloat
@@ -54,6 +55,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             for (index, window) in windows.enumerated() {
                 let stickerMenu = NSMenuItem(title: "\(index + 1). \(window.state.imageName)", action: nil, keyEquivalent: "")
                 let subMenu = NSMenu()
+
+                let renameItem = NSMenuItem(title: "Rename", action: #selector(renameSticker(_:)), keyEquivalent: "")
+                renameItem.representedObject = window
+                subMenu.addItem(renameItem)
+
+                subMenu.addItem(NSMenuItem.separator())
 
                 let toggleOutlineItem = NSMenuItem(title: window.state.showOutline ? "Hide Outline" : "Show Outline", action: #selector(toggleOutline(_:)), keyEquivalent: "")
                 toggleOutlineItem.representedObject = window
@@ -117,6 +124,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
 
+            @objc func renameSticker(_ sender: NSMenuItem) {
+                if let window = sender.representedObject as? StickerWindow {
+                    let alert = NSAlert()
+                    alert.messageText = "Rename Sticker"
+                    alert.addButton(withTitle: "OK")
+                    alert.addButton(withTitle: "Cancel")
+                    
+                    let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+                    input.stringValue = window.state.imageName
+                    alert.accessoryView = input
+                    
+                    if alert.runModal() == .alertFirstButtonReturn {
+                        window.state.imageName = input.stringValue
+                        saveStickers()
+                    }
+                }
+            }
+
             @objc func addSticker() {
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [.png]
@@ -159,7 +184,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func createSticker(from url: URL, savedData: StickerData? = nil) {
         guard let image = NSImage(contentsOf: url) else { return }
         
-        let state = StickerState(image: image, url: url, name: url.lastPathComponent)
+        let name = savedData?.name ?? url.lastPathComponent
+        let state = StickerState(image: image, url: url, name: name)
         state.onChanged = { [weak self] in self?.saveStickers() }
         
         if let data = savedData {
@@ -196,6 +222,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let data = windows.map { window in
             StickerData(
                 url: window.state.imageURL,
+                name: window.state.imageName,
                 x: window.frame.midX, // Save center
                 y: window.frame.midY, // Save center
                 scale: window.state.scale,

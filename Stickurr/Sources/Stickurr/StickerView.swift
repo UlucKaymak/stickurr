@@ -4,7 +4,7 @@ import Combine
 class StickerState: ObservableObject {
     let id = UUID()
     let imageURL: URL
-    let imageName: String
+    @Published var imageName: String
     let image: NSImage
     @Published var scale: CGFloat = 1.0
     @Published var rotation: Double = 0.0
@@ -171,6 +171,21 @@ struct StickerView: View {
                 }
             }
             Divider()
+            Button("Rename") {
+                let alert = NSAlert()
+                alert.messageText = "Rename Sticker"
+                alert.addButton(withTitle: "OK")
+                alert.addButton(withTitle: "Cancel")
+                
+                let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+                input.stringValue = state.imageName
+                alert.accessoryView = input
+                
+                if alert.runModal() == .alertFirstButtonReturn {
+                    state.imageName = input.stringValue
+                    state.triggerChange()
+                }
+            }
             Button("Remove") {
                 state.window?.close()
                 // Notification veya callback ile listeden silinecek

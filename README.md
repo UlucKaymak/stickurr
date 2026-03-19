@@ -1,18 +1,20 @@
 # Stickurr
 
-Stickurr is a lightweight, native macOS application that allows you to place stickers (images) anywhere on your desktop. It's designed to be simple, interactive, and persistent.
+Stickurr is a lightweight, native macOS application that allows you to place stickers (images) anywhere on your desktop. It's designed to be simple, cute.
 
-![screenshot1.png](screenshot1.png)
+![screenshot1.png](Screenshots/screenshot1.png)
 
 ## Features
 
-### Core Function
-- **Add Stickers:** Add any image (PNG, JPG, etc.) from your local files to your desktop.
-- **Clipboard Support:** Quickly add stickers directly from your clipboard (Image or File URL).
-- **Persistence:** Your stickers stay exactly where you left them. All positions, scales, and rotations are saved and restored automatically when you restart the app.
-- **Menu Bar App:** Runs discreetly in your macOS menu bar for quick access.
+### Core functions
+- You can use PNG files or images that you copied.
+- Scale and rotate the stickers, toggle their outlines.
+- It consumes almost no system resources.
+- Stickers can be on top of other windows.
+- It remembers where you put the stickers. 
+- And only works on menu bar for quick access.
 
-### Interactive Gestures
+### Stickerss
 - **Move:** Long-press on a sticker to "pick it up" and drag it anywhere on your screen.
 - **Context Menu:** Right-click any sticker to access quick actions:
   - **Grow/Shrink:** Resize your stickers (hold `Shift` for 5x faster scaling).
@@ -21,6 +23,19 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
   - **Reset:** Instantly restore a sticker to its original size and rotation.
   - **Remove:** Delete a single sticker from your desktop.
 
+### Known baddies:
+- External displays cause cluttered stickers when you unplug them.
+- Sometimes rotation or scaling work after you hold the sticker. (idk why)
+
+## Technical stuff
+- Made with Swift and AppKit. 
+- Very lightweight. (Like 0.01 CPU usage)
+- Only data that stored:
+'''
+'/Users/username/Library/Application Support/Stickurr' for Sticker PNGs
+'/Users/uluckaymak/Library/Preferences/Stickurr.plist' for Sticker Attributes
+'''
+--- 
 
 ## License
-Created by Uluc Kaymak. All rights reserved.
+Created by Uluç Kaymak. All rights reserved.
