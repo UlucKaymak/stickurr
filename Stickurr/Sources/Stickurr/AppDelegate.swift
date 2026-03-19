@@ -251,8 +251,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     @objc func growSticker(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
+            let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+            let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                window.state.scale += 0.1
+                window.state.scale += amount
             }
             saveStickers()
         }
@@ -260,8 +262,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     @objc func shrinkSticker(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
+            let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+            let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                window.state.scale -= 0.1
+                window.state.scale -= amount
             }
             saveStickers()
         }
@@ -269,8 +273,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     @objc func rotateStickerCW(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
+            let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+            let amount: Double = isShiftPressed ? 30 : 15
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                window.state.rotation += 15
+                window.state.rotation += amount
             }
             saveStickers()
         }
@@ -278,8 +284,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc func rotateStickerCCW(_ sender: NSMenuItem) {
         if let window = sender.representedObject as? StickerWindow {
+            let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+            let amount: Double = isShiftPressed ? 30 : 15
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                window.state.rotation -= 15
+                window.state.rotation -= amount
             }
             saveStickers()
         }
