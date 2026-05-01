@@ -3,12 +3,21 @@
 # Configuration
 APP_NAME="Stickurr"
 BUNDLE_ID="com.uluckaymak.Stickurr"
-VERSION="0.7.7"
 BUILD_DIR=".build/apple-bundle"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 
+# 0. Increment Version in Info.plist
+CURRENT_VERSION=$(plutil -extract CFBundleShortVersionString xml1 -o - Info.plist | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+NEW_PATCH=$((patch + 1))
+VERSION="$major.$minor.$NEW_PATCH"
+
+echo "Updating version from $CURRENT_VERSION to $VERSION"
+plutil -replace CFBundleShortVersionString -string "$VERSION" Info.plist
+
 echo "================================================"
 echo "      Stickurr - Professional Build Script      "
+echo "      Version: $VERSION"
 echo "================================================"
 
 # 1. Clean and Build

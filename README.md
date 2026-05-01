@@ -9,12 +9,14 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 ## Features
 
 ### Core functions
-- You can use PNG files or images that you copied.
-- Scale and rotate the stickers, toggle their outlines.
-- It consumes almost no system resources.
+- You can use PNG and JPEG files or images that you copied.
+- You can scale and rotate the stickers, toggle their outlines. (Idk what else I can do)
 - Stickers can be on top of other windows.
+- It consumes almost no system resources.
 - It remembers where you put the stickers. 
-- And only works on the menu bar for quick access.
+- Works in your other monitors too.
+- It stores your stickers so you don't lose them.
+- And only works on the menu bar for clean look.
 
 ### Stickerss
 - **Move:** Long-press on a sticker to "pick it up" and drag it anywhere on your screen.
@@ -32,13 +34,10 @@ Stickurr is a lightweight, native macOS application that allows you to place sti
 ![screenshot3.png](Screenshots/screenshot3.png)
 
 ## Technical stuff
-- Made with Swift and AppKit. 
+- Made with Swift and AppKit/SwiftUI. 
 - Very lightweight. (Like 0.01% of CPU usage)
-- Only data that is stored:
-  * '/Users/username/Library/Application Support/Stickurr' for Sticker PNGs
-  * '/Users/uluckaymak/Library/Preferences/Stickurr.plist' for Sticker Attributes
-
-
+- All data is stored in one place for easy backup:
+  * `~/Library/Application Support/Stickurr/` for both Sticker PNGs and the `stickers.json` data file.
 
 
 ## License

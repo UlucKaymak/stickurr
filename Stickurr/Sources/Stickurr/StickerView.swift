@@ -17,6 +17,7 @@ class StickerState: ObservableObject {
     
     weak var window: NSWindow?
     var onChanged: (() -> Void)? // Kayıt için callback
+    var onRemove: (() -> Void)? // Silme için callback
     
     init(image: NSImage, url: URL, name: String) {
         self.image = image
@@ -27,6 +28,10 @@ class StickerState: ObservableObject {
     func triggerChange() {
         onChanged?()
     }
+    
+    func triggerRemove() {
+        onRemove?()
+    }
 }
 
 struct StickerView: View {
@@ -36,7 +41,7 @@ struct StickerView: View {
     @State private var startMouseLocation: NSPoint = .zero
     @State private var startWindowOrigin: NSPoint = .zero
     
-    let outlineSize: CGFloat = 4
+    let outlineSize: CGFloat = 3.2
     let outlineColor: Color = .white
     let padding: CGFloat = 30
     let baseDimension: CGFloat = 230
@@ -59,6 +64,8 @@ struct StickerView: View {
             Image(nsImage: state.image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
+                .frame(width: baseSize.width, height: baseSize.height)
+                .cornerRadius(12 / state.scale)
                 .rotationEffect(.degrees(state.rotation))
                 .scaleEffect(state.scale)
                 .scaleEffect(isLongPressed ? 1.1 : 1.0)
@@ -68,24 +75,26 @@ struct StickerView: View {
                     anchor: .topLeading,
                     perspective: 0.5
                 )
-                .frame(width: baseSize.width, height: baseSize.height)
                 .opacity(state.isPasted ? 1.0 : 0.0)
-                // Outline shadows (Conditional based on state.showOutline)
+                // Hard Outline (Only integer offsets to prevent sub-pixel blurring)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: 0)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: 0)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 0, y: outlineSize)
                 .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 0, y: -outlineSize)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: outlineSize)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: -outlineSize)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: -outlineSize)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: outlineSize)
-                // Shadow
-                .shadow(
-                    color: Color.black.opacity(state.isPasted ? 0.4 : 0.2),
-                    radius: state.isPasted ? 8 : 20,
-                    x: state.isPasted ? 0 : 15,
-                    y: state.isPasted ? 4 : 25
-                )
+                // Diagonals (Integer approximations for maximum sharpness)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 2, y: 2)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 2, y: -2)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -2, y: 2)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -2, y: -2)
+                // In-betweens (To fill gaps and prevent "blocky" look while staying sharp)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 3, y: 1)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 3, y: -1)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -3, y: 1)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -3, y: -1)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 1, y: 3)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 1, y: -3)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -1, y: 3)
+                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -1, y: -3)
         }
         .padding(padding)
         .onAppear {
@@ -182,8 +191,7 @@ struct StickerView: View {
                 }
             }
             Button("Remove") {
-                state.window?.close()
-                // Notification veya callback ile listeden silinecek
+                state.triggerRemove()
             }
             Button("Reset") {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

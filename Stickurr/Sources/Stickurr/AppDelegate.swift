@@ -19,11 +19,16 @@ extension NSScreen {
     var displayID: CGDirectDisplayID? {
         return deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
     }
+    
+    static func screenID(for point: NSPoint) -> CGDirectDisplayID? {
+        return NSScreen.screens.first { NSPointInRect(point, $0.frame) }?.displayID
+    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var statusItem: NSStatusItem!
     var windows: [StickerWindow] = []
+    private var isLoading = false
     
     lazy var stickersFolder: URL = {
         let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
@@ -193,7 +198,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc func addSticker() {
         let openPanel = NSOpenPanel()
-        openPanel.allowedContentTypes = [.png]
+        openPanel.allowedContentTypes = [.png, .jpeg]
         openPanel.allowsMultipleSelection = true
         
         openPanel.begin { response in
@@ -229,11 +234,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     func createSticker(from url: URL, savedData: StickerData? = nil) {
-        guard let image = NSImage(contentsOf: url) else { return }
+        var finalURL = url
         
-        let name = savedData?.name ?? url.lastPathComponent
-        let state = StickerState(image: image, url: url, name: name)
+        // Eğer dosya bizim klasörümüzde değilse kopyala
+        let fileName = url.lastPathComponent
+        let targetURL = stickersFolder.appendingPathComponent(fileName)
+        
+        if url.standardized.path != targetURL.standardized.path {
+            // Eğer hedefte aynı isimde dosya varsa ve içeriği farklıysa (veya basitçe isim çakışmasını önlemek için timestamp ekleyelim)
+            if FileManager.default.fileExists(atPath: targetURL.path) {
+                let timestamp = Int(Date().timeIntervalSince1970)
+                let newFileName = "\(timestamp)_\(fileName)"
+                let newTargetURL = stickersFolder.appendingPathComponent(newFileName)
+                try? FileManager.default.copyItem(at: url, to: newTargetURL)
+                finalURL = newTargetURL
+            } else {
+                try? FileManager.default.copyItem(at: url, to: targetURL)
+                finalURL = targetURL
+            }
+        }
+
+        guard let image = NSImage(contentsOf: finalURL) else { return }
+        
+        let name = savedData?.name ?? finalURL.lastPathComponent
+        let state = StickerState(image: image, url: finalURL, name: name)
         state.onChanged = { [weak self] in self?.saveStickers() }
+        state.onRemove = { [weak self] in
+            if let window = state.window as? StickerWindow {
+                window.close()
+                self?.windows.removeAll { $0 === window }
+                self?.saveStickers()
+            }
+        }
         
         if let data = savedData {
             state.scale = data.scale
@@ -273,7 +305,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     func saveStickers() {
-        let data = windows.map { window in
+        if isLoading { return }
+        
+        // Update state with last saved screen ID before creating the data array
+        for window in windows {
+            if let screenID = window.screen?.displayID {
+                window.state.lastSavedScreenID = screenID
+            } else {
+                if let screenID = NSScreen.screenID(for: NSPoint(x: window.state.x, y: window.state.y)) {
+                    window.state.lastSavedScreenID = screenID
+                }
+            }
+        }
+
+        // Görsel sıralamayı al (Önden arkaya)
+        let orderedWindows = NSApp.orderedWindows.compactMap { $0 as? StickerWindow }
+        
+        // Kaydederken en arkadakinden en öndekine doğru sırala.
+        // Böylece yüklenirken en öndeki en son yaratılır ve üstte kalır.
+        let sortedWindows = windows.sorted { (a, b) -> Bool in
+            let indexA = orderedWindows.firstIndex(of: a) ?? 0
+            let indexB = orderedWindows.firstIndex(of: b) ?? 0
+            return indexA > indexB // Büyük index daha arkadadır
+        }
+
+        let data = sortedWindows.map { window in
             StickerData(
                 url: window.state.imageURL,
                 name: window.state.imageName,
@@ -284,24 +340,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 showOutline: window.state.showOutline,
                 inFront: window.state.inFront,
                 isCenterSaved: true,
-                screenID: window.screen?.displayID ?? window.state.lastSavedScreenID
+                screenID: window.state.lastSavedScreenID
             )
         }
         
-        // Update state with last saved screen ID
-        for window in windows {
-            if let screenID = window.screen?.displayID {
-                window.state.lastSavedScreenID = screenID
-            }
-        }
-        
         if let encoded = try? JSONEncoder().encode(data) {
-            UserDefaults.standard.set(encoded, forKey: "SavedStickers")
+            let fileURL = stickersFolder.appendingPathComponent("stickers.json")
+            try? encoded.write(to: fileURL)
         }
     }
     
     func loadStickers() {
-        guard let savedData = UserDefaults.standard.data(forKey: "SavedStickers"),
+        isLoading = true
+        defer { isLoading = false }
+        
+        let fileURL = stickersFolder.appendingPathComponent("stickers.json")
+        guard let savedData = try? Data(contentsOf: fileURL),
               let decoded = try? JSONDecoder().decode([StickerData].self, from: savedData) else {
             return
         }
