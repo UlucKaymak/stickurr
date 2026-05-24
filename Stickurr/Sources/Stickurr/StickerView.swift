@@ -12,12 +12,13 @@ class StickerState: ObservableObject {
     @Published var showOutline: Bool = true
     @Published var inFront: Bool = false
     @Published var lastSavedScreenID: CGDirectDisplayID?
+    
     @Published var x: CGFloat = 0
     @Published var y: CGFloat = 0
     
     weak var window: NSWindow?
-    var onChanged: (() -> Void)? // Kayıt için callback
-    var onRemove: (() -> Void)? // Silme için callback
+    var onChanged: (() -> Void)?
+    var onRemove: (() -> Void)?
     
     init(image: NSImage, url: URL, name: String) {
         self.image = image
@@ -41,61 +42,22 @@ struct StickerView: View {
     @State private var startMouseLocation: NSPoint = .zero
     @State private var startWindowOrigin: NSPoint = .zero
     
-    let outlineSize: CGFloat = 3.2
+    let outlineSize: CGFloat = 4.5
     let outlineColor: Color = .white
     let padding: CGFloat = 30
     let baseDimension: CGFloat = 230
     
-    private var baseSize: CGSize {
-        let imageSize = state.image.size
-        let aspectRatio = imageSize.width / imageSize.height
-        if aspectRatio > 1 {
-            return CGSize(width: baseDimension, height: baseDimension / aspectRatio)
-        } else {
-            return CGSize(width: baseDimension * aspectRatio, height: baseDimension)
-        }
-    }
-    
     var body: some View {
-        ZStack {
-            Color.white.opacity(0.00)
-                .contentShape(Rectangle())
-            
-            Image(nsImage: state.image)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: baseSize.width, height: baseSize.height)
-                .cornerRadius(12 / state.scale)
-                .rotationEffect(.degrees(state.rotation))
-                .scaleEffect(state.scale)
-                .scaleEffect(isLongPressed ? 1.1 : 1.0)
-                .rotation3DEffect(
-                    .degrees(state.isPasted ? 0 : -45),
-                    axis: (x: 1, y: -0.5, z: 0),
-                    anchor: .topLeading,
-                    perspective: 0.5
-                )
-                .opacity(state.isPasted ? 1.0 : 0.0)
-                // Hard Outline (Only integer offsets to prevent sub-pixel blurring)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: outlineSize, y: 0)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -outlineSize, y: 0)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 0, y: outlineSize)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 0, y: -outlineSize)
-                // Diagonals (Integer approximations for maximum sharpness)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 2, y: 2)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 2, y: -2)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -2, y: 2)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -2, y: -2)
-                // In-betweens (To fill gaps and prevent "blocky" look while staying sharp)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 3, y: 1)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 3, y: -1)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -3, y: 1)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -3, y: -1)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 1, y: 3)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: 1, y: -3)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -1, y: 3)
-                .shadow(color: state.showOutline ? outlineColor : .clear, radius: 0, x: -1, y: -3)
-        }
+        StickerContent(
+            image: state.image,
+            scale: state.scale,
+            rotation: state.rotation,
+            showOutline: state.showOutline,
+            isPasted: state.isPasted,
+            isLongPressed: isLongPressed,
+            outlineColor: outlineColor,
+            outlineSize: outlineSize
+        )
         .padding(padding)
         .onAppear {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75, blendDuration: 0)) {
@@ -124,83 +86,158 @@ struct StickerView: View {
                 .onEnded { _ in
                     if isLongPressed {
                         isLongPressed = false
-                        // "Yapıştırma" efekti için animasyonu tekrar tetikle
                         state.isPasted = false
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0)) {
                             state.isPasted = true
                         }
-                        state.triggerChange() // Konum değişince kaydet
+                        state.triggerChange()
                     }
                 }
         )
         .contextMenu {
-            Section("Appearance") {
-                Button(state.showOutline ? "Hide Outline" : "Show Outline") {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.showOutline.toggle()
-                    }
-                    state.triggerChange()
-                }
-                Button(state.inFront ? "Send to Desktop" : "Bring to Front") {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.inFront.toggle()
-                    }
-                    state.triggerChange()
-                }
-            }
-            Section("Size") {
-                Button("Grow") {
-                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
-                    let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.scale += amount
-                    }
-                    state.triggerChange()
-                }
-                Button("Shrink") {
-                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
-                    let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.scale -= amount
-                    }
-                    state.triggerChange()
-                }
-            }
-            Section("Rotate") {
-                Button("Rotate Clockwise") {
-                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
-                    let amount: Double = isShiftPressed ? 30 : 15
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.rotation += amount
-                    }
-                    state.triggerChange()
-                }
-                Button("Rotate Counter-Clockwise") {
-                    let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
-                    let amount: Double = isShiftPressed ? 30 : 15
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.rotation -= amount
-                    }
-                    state.triggerChange()
-                }
-            }
-            Divider()
-            Button("Rename") {
-                if let appDelegate = NSApp.delegate as? AppDelegate {
-                    appDelegate.showRenameAlert(for: state)
-                }
-            }
-            Button("Remove") {
-                state.triggerRemove()
-            }
-            Button("Reset") {
+            contextMenuContent
+        }
+    }
+    
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        Section("Appearance") {
+            Button(state.showOutline ? "Hide Outline" : "Show Outline") {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    state.scale = 1.0
-                    state.rotation = 0.0
-                    state.showOutline = true
+                    state.showOutline.toggle()
                 }
                 state.triggerChange()
             }
+            Button(state.inFront ? "Send to Desktop" : "Bring to Front") {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.inFront.toggle()
+                }
+                state.triggerChange()
+            }
+        }
+        Section("Size") {
+            Button("Grow") {
+                let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.scale += amount
+                }
+                state.triggerChange()
+            }
+            Button("Shrink") {
+                let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                let amount: CGFloat = isShiftPressed ? 0.5 : 0.1
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.scale -= amount
+                }
+                state.triggerChange()
+            }
+        }
+        Section("Rotate") {
+            Button("Rotate Clockwise") {
+                let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                let amount: Double = isShiftPressed ? 30 : 15
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.rotation += amount
+                }
+                state.triggerChange()
+            }
+            Button("Rotate Counter-Clockwise") {
+                let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                let amount: Double = isShiftPressed ? 30 : 15
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.rotation -= amount
+                }
+                state.triggerChange()
+            }
+        }
+        Divider()
+        Button("Rename") {
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.showRenameAlert(for: state)
+            }
+        }
+        Button("Remove") {
+            state.triggerRemove()
+        }
+        Button("Reset") {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                state.scale = 1.0
+                state.rotation = 0.0
+                state.showOutline = true
+            }
+            state.triggerChange()
+        }
+    }
+}
+
+struct StickerContent: View {
+    let image: NSImage
+    let scale: CGFloat
+    let rotation: Double
+    let showOutline: Bool
+    let isPasted: Bool
+    let isLongPressed: Bool
+    let outlineColor: Color
+    let outlineSize: CGFloat
+    
+    let baseDimension: CGFloat = 230
+    
+    private var baseSize: CGSize {
+        let imageSize = image.size
+        let aspectRatio = imageSize.width / imageSize.height
+        if aspectRatio > 1 {
+            return CGSize(width: baseDimension, height: baseDimension / aspectRatio)
+        } else {
+            return CGSize(width: baseDimension * aspectRatio, height: baseDimension)
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            Color.white.opacity(0.001)
+                .contentShape(Rectangle())
+            
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: baseSize.width, height: baseSize.height)
+                .cornerRadius(12 / scale)
+                .rotationEffect(.degrees(rotation))
+                .scaleEffect(scale)
+                .scaleEffect(isLongPressed ? 1.1 : 1.0)
+                .rotation3DEffect(
+                    .degrees(isPasted ? 0 : -45),
+                    axis: (x: 1, y: -0.5, z: 0),
+                    anchor: .topLeading,
+                    perspective: 0.5
+                )
+                .opacity(isPasted ? 1.0 : 0.0)
+                .stickerOutline(show: showOutline, color: outlineColor, size: outlineSize)
+                // Subtle 1px drop shadow for depth
+                .shadow(color: Color.black.opacity(0.3), radius: 1, x: 1, y: 1)
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func stickerOutline(show: Bool, color: Color, size: CGFloat) -> some View {
+        if show {
+            self
+                .compositingGroup()
+                // Back to radius 0 for maximum sharpness, but with more offsets for thickness
+                .shadow(color: color, radius: 0, x: size, y: 0)
+                .shadow(color: color, radius: 0, x: -size, y: 0)
+                .shadow(color: color, radius: 0, x: 0, y: size)
+                .shadow(color: color, radius: 0, x: 0, y: -size)
+                // Diagonals at full size
+                .shadow(color: color, radius: 0, x: size * 0.71, y: size * 0.71)
+                .shadow(color: color, radius: 0, x: size * 0.71, y: -size * 0.71)
+                .shadow(color: color, radius: 0, x: -size * 0.71, y: size * 0.71)
+                .shadow(color: color, radius: 0, x: -size * 0.71, y: -size * 0.71)
+        } else {
+            self
         }
     }
 }
