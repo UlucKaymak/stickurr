@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import ServiceManagement
 
 // Kaydedilecek veri yapısı
 struct StickerData: Codable {
@@ -54,6 +55,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         // Ekran değişikliklerini dinle
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+
+        // Açılışta sessizce güncelleme kontrolü yap
+        UpdateChecker.checkForUpdates(silent: true)
     }
     
     @objc func screensChanged() {
@@ -139,11 +143,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         
         menu.addItem(NSMenuItem.separator())
-        
+
+        let launchAtLoginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        launchAtLoginItem.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
+        menu.addItem(launchAtLoginItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.7.3"
 
-        let versionItem = NSMenuItem(title: "Stickurr v\(version)", action: nil, keyEquivalent: "")
-        versionItem.isEnabled = false
+        let versionItem = NSMenuItem(title: "Stickurr v\(version)", action: #selector(checkForUpdatesManually), keyEquivalent: "")
+        versionItem.target = self
+        versionItem.toolTip = "Click to check for updates"
         menu.addItem(versionItem)
         
         menu.addItem(NSMenuItem(title: "Quit Stickurr", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -409,6 +420,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
     
+    @objc func checkForUpdatesManually() {
+        UpdateChecker.checkForUpdates(silent: false)
+    }
+
+    @objc func toggleLaunchAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Couldn't update Launch at Login"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+        }
+    }
+
     @objc func reloadStickers() {
         // Mevcut pencereleri kapat
         for window in windows {
